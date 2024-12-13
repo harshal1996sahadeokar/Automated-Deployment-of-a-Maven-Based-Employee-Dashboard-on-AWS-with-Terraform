@@ -1,12 +1,12 @@
-// Example Java Servlet
-package com.example;
-
-import java.io.IOException;
-import javax.servlet.http.*;
-
-public class EmployeeDashboardServlet extends HttpServlet {
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType("text/html");
-        response.getWriter().println("<h1>Welcome to Employee Dashboard!</h1>");
-    }
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" version="3.0">
+    <display-name>Holiday Filter App</display-name>
+    <servlet>
+        <servlet-name>HolidayFilterServlet</servlet-name>
+        <servlet-class>com.example.HolidayFilterServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HolidayFilterServlet</servlet-name>
+        <url-pattern>/filter</url-pattern>
+    </servlet-mapping>
+</web-app>
