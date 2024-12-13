@@ -1,9 +1,11 @@
 provider "aws" {
-  region = var.aws_region
+  region = "us-east-1" # Change to your preferred region
 }
 
-resource "aws_security_group" "web_sg" {
-  name   = "web-sg"
+# Security Group for Tomcat
+resource "aws_security_group" "tomcat_sg" {
+  name        = "tomcat-sg"
+  description = "Allow SSH and HTTP traffic"
 
   ingress {
     from_port   = 22
@@ -27,63 +29,35 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-resource "aws_security_group" "db_sg" {
-  name   = "db-sg"
+# Key Pair
+#resource "aws_key_pair" "key" {
+  #key_name   = "ANSIBLE"
+  #public_key = file("/.ssh/id_ed25519") # Path to your public SSH key
+#}
 
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.web_sg.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-resource "aws_db_instance" "employee_db" {
-  allocated_storage    = 20
-  engine               = "mysql"
-  instance_class       = "db.t2.micro"
-  db_name              = "HarshalTech"
-  username             = "admin"
-  password             = var.db_password
-  publicly_accessible  = true
-  vpc_security_group_ids = [aws_security_group.web_sg.id]
-}
-resource "aws_instance" "web_server" {
-  ami           = "ami-0c02fb55956c7d316" # Ubuntu AMI
+# EC2 Instance
+resource "aws_instance" "tomcat" {
+  ami           = "ami-005fc0f236362e99f" # Ubuntu 20.04 LTS AMI
   instance_type = "t2.micro"
-  key_name      = var.key_name
-  security_groups = [aws_security_group.web_sg.name]
+  #key_name      = aws_key_pair.key.key_name
+
+  vpc_security_group_ids = [aws_security_group.tomcat_sg.id]
 
   user_data = <<-EOF
     #!/bin/bash
     sudo apt update -y
-    sudo apt install -y openjdk-11-jdk tomcat9 maven mysql-client
+    sudo apt install -y openjdk-11-jdk tomcat9
+    sudo useradd -m -d /opt/tomcat -U -s /bin/false tomcat
+    cd /tmp
+    wget https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.20/bin/apache-tomcat-10.0.20.tar.gz
+    sudo tar xzvf apache-tomcat-10*tar.gz -C /opt/tomcat --strip-components=1
+    sudo chown -R tomcat:tomcat /opt/tomcat/
+    sudo chmod -R u+x /opt/tomcat/bin
     sudo systemctl start tomcat9
     sudo systemctl enable tomcat9
   EOF
 
-  provisioner "file" {
-    source      = "target/employee-dashboard.war"
-    destination = "/tmp/employee-dashboard.war"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo mv /tmp/employee-dashboard.war /var/lib/tomcat9/webapps/",
-      "sudo systemctl restart tomcat9"
-    ]
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "mysql -h ${aws_db_instance.employee_db.endpoint} -u admin -p${var.db_password} -e \"CREATE TABLE employees (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50), password VARCHAR(50));\"",
-      "mysql -h ${aws_db_instance.employee_db.endpoint} -u admin -p${var.db_password} -e \"INSERT INTO employees (username, password) VALUES ('admin', 'admin123');\""
-    ]
+  tags = {
+    Name = "TomcatServer"
   }
 }
