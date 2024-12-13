@@ -1,10 +1,14 @@
+<!DOCTYPE html>
 <html>
 <head>
-    <title>HarshalTECH INDIA</title>
-    <link rel="stylesheet" type="text/css" href="static/css/styles.css">
+    <title>Holiday Filter</title>
 </head>
 <body>
-    <h1>Welcome to the Employee Dashboard</h1>
-    <p>This is the central place to manage employee data.</p>
+    <h1>Check Indian Holidays</h1>
+    <form action="filter" method="post">
+        <label for="date">Enter Date (YYYY-MM-DD):</label>
+        <input type="date" id="date" name="date" required>
+        <button type="submit">Submit</button>
+    </form>
 </body>
 </html>
